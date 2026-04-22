@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GROUNDNET · 赛博酒馆</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="theme-cyber" data-screen="screen-login">
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-glow"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <div id="app" class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="sigil-wrap" aria-hidden="true">
+            <span class="sigil">⬡</span>
+          </div>
+          <div>
+            <div class="title">GROUNDNET</div>
+            <div class="subtitle">CYBER TAVERN · NEURAL LIAR</div>
+          </div>
+        </div>
+        <div class="topbar-side">
+          <div class="status-brief">
+            <span class="micro-label">连接状态</span>
+            <div class="pill" id="connPill">
+              <span class="dot"></span>
+              <span id="connText">未连接</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="screen-login" class="panel hero-screen">
+        <div class="hero-copy hero-card">
+          <div class="micro-label">赛博酒馆终端</div>
+          <h1>进入<span class="neon-magenta">骗子酒馆</span>对局网络</h1>
+          <p class="hero-lead">
+            高强度桌面博弈、机器人协同、实时回合同步。更清晰的牌桌、更强的操作反馈、更适合连续对局的终端体验。
+          </p>
+          <div class="hero-stats">
+            <div class="stat-chip">
+              <span class="stat-k">玩法</span>
+              <span class="stat-v">骗子酒馆 / 成语接龙</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-k">协议</span>
+              <span class="stat-v">WebSocket + Protobuf</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-k">引擎</span>
+              <span class="stat-v">C++17 + Lua 5.4</span>
+            </div>
+          </div>
+          <ul class="ticks">
+            <li>登录后可创建、加入或快速匹配房间</li>
+            <li>房主可拉起机器人，补满桌面后开局</li>
+            <li>对局界面会突出当前行动、声明与风险反馈</li>
+          </ul>
+        </div>
+
+        <div class="card login-card">
+          <div class="panel-headline">
+            <div class="panel-title">接入终端</div>
+            <div class="panel-subtitle">输入代号与密钥，建立连接后进入大厅</div>
+          </div>
+          <label for="nameInput">操作者代号</label>
+          <input id="nameInput" maxlength="16" placeholder="小明 / 李华 / Tom / Jack" class="input-cyber" />
+          <label for="pwdInput" class="field-label">访问密钥</label>
+          <input id="pwdInput" type="password" maxlength="32" placeholder="输入对应密码" class="input-cyber" />
+          <button id="btnLogin" class="btn primary wide">建立连接</button>
+          <div class="hint-grid">
+            <div class="hint-block">
+              <span class="micro-label">连接地址</span>
+              <code id="wsHint"></code>
+            </div>
+            <div class="hint-block">
+              <span class="micro-label">建议</span>
+              <span class="hint-text">优先使用桌面浏览器进入房间，可获得更完整的牌桌布局。</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-lobby" class="panel hidden">
+        <div class="lobby-grid">
+          <div class="card lobby-card lobby-primary">
+            <div class="panel-headline">
+              <div class="panel-title">大厅控制台</div>
+              <div class="panel-subtitle">优先完成建房、匹配或加入房间</div>
+            </div>
+            <div class="lobby-action-grid">
+              <button id="btnCreate" class="btn primary lobby-action">创建骗子酒馆房</button>
+              <button id="btnCreateIdiom" class="btn ghost lobby-action">创建成语接龙房</button>
+              <button id="btnMatch" class="btn ghost lobby-action">快速匹配</button>
+            </div>
+            <div class="join-card">
+              <div class="micro-label">直接加入房间</div>
+              <div class="row join-row">
+                <input id="roomIdInput" placeholder="输入房间 ID" />
+                <button id="btnJoin" class="btn">加入房间</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card lobby-card lobby-side">
+            <div class="panel-headline">
+              <div class="panel-title">操作提示</div>
+              <div class="panel-subtitle">进入房间后，非房主需准备，房主可加机器人并开局</div>
+            </div>
+            <div class="llm-status-card" id="llmStatusCard">
+              <div class="micro-label">大模型状态</div>
+              <div class="llm-status-line">
+                <span id="llmStatusDot" class="llm-status-dot offline"></span>
+                <span id="llmStatusText">未检测</span>
+              </div>
+              <div id="llmStatusDetail" class="llm-status-detail">登录后会自动检测当前机器人是否可用。</div>
+            </div>
+            <div class="tips-stack">
+              <div class="tip-row"><span class="tip-index">01</span><span>满 4 人后才能开始骗子酒馆对局。</span></div>
+              <div class="tip-row"><span class="tip-index">02</span><span>开局后手牌只对自己可见，公共区只显示声明与已开牌信息。</span></div>
+              <div class="tip-row"><span class="tip-index">03</span><span>若机器人在线，会在座位信息中显示当前策略状态。</span></div>
+            </div>
+          </div>
+
+          <div class="card log-card lobby-log">
+            <div class="panel-headline">
+              <div class="panel-title">事件流</div>
+              <div class="panel-subtitle">连接状态、房间事件和结算结果会滚动记录在这里</div>
+            </div>
+            <pre id="logBox"></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-room" class="panel hidden">
+        <div class="room-head card">
+          <div class="room-title-block">
+            <div class="micro-label">当前房间</div>
+            <h2 id="roomTitle">房间</h2>
+            <p class="muted" id="roomMeta"></p>
+          </div>
+          <div class="room-toolbar">
+            <div id="roomActionsHost" class="row room-actions hidden">
+              <button id="btnBot" class="btn ghost">加入机器人</button>
+              <button id="btnStart" class="btn primary">开始游戏</button>
+            </div>
+            <div id="roomActionsGuest" class="row room-actions hidden">
+              <button id="btnReady" class="btn primary">准备</button>
+            </div>
+            <div class="row room-actions">
+              <button id="btnLeaveRoom" class="btn danger ghost">离开房间</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="room-grid">
+          <div class="room-main">
+            <div class="card battle-stage">
+              <div class="stage-header">
+                <div class="stage-copy">
+                  <div class="micro-label">牌桌态势</div>
+                  <div id="turnStrip" class="turn-strip"></div>
+                </div>
+                <div id="pileInfo" class="pile pile--top"></div>
+              </div>
+
+              <div class="table-wrap">
+                <div class="table-shell">
+                  <div class="table" id="table">
+                    <div id="playStack" class="play-stack"></div>
+                    <div id="gunFx" class="gun-fx" aria-hidden="true"></div>
+                    <div id="tableFlash" class="table-flash" aria-hidden="true"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="gameResultPanel" class="result-panel hidden">
+              <div class="result-head">本局结算</div>
+              <div id="gameResultText" class="result-text"></div>
+              <div id="gameResultList" class="result-list"></div>
+            </div>
+          </div>
+
+          <aside class="room-side">
+            <div class="card intel-card">
+              <div class="panel-headline compact">
+                <div class="panel-title">本轮情报</div>
+                <div class="panel-subtitle">只保留当前决策最需要的信息</div>
+              </div>
+              <div id="roundInfo" class="round-info"></div>
+            </div>
+
+            <div class="card hand-panel hidden" id="handBar">
+              <div class="panel-headline compact">
+                <div class="panel-title">你的手牌控制台</div>
+                <div class="panel-subtitle">先选牌，再确认声明，最后执行动作</div>
+              </div>
+
+              <div class="stage-flow" aria-hidden="true">
+                <div class="step-pill">1 选牌</div>
+                <div class="step-pill">2 确认声明</div>
+                <div class="step-pill">3 执行动作</div>
+              </div>
+
+              <div id="hand" class="hand"></div>
+
+              <div class="controls">
+                <div id="declareBar" class="declare-bar hidden">
+                  <div class="declare-title">口头声明必须与本轮骗子牌一致</div>
+                  <div class="declare-chips" id="declareChips">
+                    <button type="button" class="chip rank-chip" data-rank="Q" disabled>Q</button>
+                    <button type="button" class="chip rank-chip" data-rank="K" disabled>K</button>
+                    <button type="button" class="chip rank-chip" data-rank="A" disabled>A</button>
+                  </div>
+                  <p id="declareStatus" class="declare-status muted"></p>
+                </div>
+
+                <label id="handHint" class="hand-hint">点选 1 到 3 张手牌，再确认声明并出牌。</label>
+                <div id="actionReason" class="action-reason muted"></div>
+                <div class="action-buttons">
+                  <button id="btnPlay" class="btn primary">出牌 / 跟牌</button>
+                  <button id="btnChallenge" class="btn danger">开上家牌</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card hidden" id="idiomBar">
+              <div class="panel-headline compact">
+                <div class="panel-title">成语接龙</div>
+                <div class="panel-subtitle">当房间是成语模式时显示</div>
+              </div>
+              <p class="muted" id="idiomHint">当前成语：</p>
+              <div class="row">
+                <input id="idiomInput" maxlength="16" placeholder="输入四字成语" />
+                <button id="btnIdiomSubmit" class="btn primary">提交</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+
+    <script src="/characters.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/protobuf.min.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

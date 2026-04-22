@@ -1,0 +1,32 @@
+# Build artifacts
+build/
+build2/
+out/
+bin/
+obj/
+*.obj
+*.pdb
+*.ilk
+*.lib
+*.exp
+*.exe
+*.dll
+*.tlog
+*.recipe
+*.lastbuildstate
+
+# IDE/runtime
+.vs/
+.vscode/
+.idea/
+*.log
+
+# Local env/secrets
+.env
+.env.*
+
+# Local docs not pushed
+docs/
+
+# Vendored dependencies not pushed
+third_party/
